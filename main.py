@@ -140,17 +140,27 @@ def upload_file_resources():
                 for index, row in df.iterrows():
                     part_no = row.get('Part No')
                     name = row.get('Name')
+                    type = row.get('Type')
+                    if type == "Tools" :
+                        type_to_insert = "tool"
+                    elif type == "Training Aid" :
+                        type_to_insert = "training_aid"
+                    else :
+                        type_to_insert = type
 
                     if not name:
                         print(f"Skipping row {index} due to missing 'Name' value.")
                         continue
 
-                    resource_id = check_if_resource_exists(connection, name)
+                    # commented due to removing the update logic
+                    # resource_id = check_if_resource_exists(connection, name)
 
-                    if resource_id is None:
-                        insert_resource(connection, part_no, name)
-                    else:
-                        update_resource(connection, part_no, name)
+                    # if resource_id is None:
+
+                    insert_resource(connection, type_to_insert , part_no, name)
+
+                    # else:
+                    #     update_resource(connection, part_no, name)
 
                 connection.close()
                 return jsonify({
@@ -279,4 +289,4 @@ def upload_audience():
         return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
 
 if __name__ == "__main__":
-    app.run(debug=True,port=5050)
+    app.run(debug=True,port=5006)

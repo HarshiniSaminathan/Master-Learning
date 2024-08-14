@@ -93,14 +93,14 @@ def check_if_resource_exists(connection, name):
         print(f"Error checking if resource '{name}' exists:", error)
         return None
 
-def insert_resource(connection, part_no, name):
+def insert_resource(connection, type , part_no, name):
     try:
         cursor = connection.cursor()
         sql = """
-        INSERT INTO public.resources (part_no, name, created_at, updated_at)
-        VALUES (%s , %s, now(), now())
+        INSERT INTO public.resources (type ,part_no, name, created_at, updated_at)
+        VALUES (%s ,%s , %s, now(), now())
         """
-        cursor.execute(sql, (part_no , name,))
+        cursor.execute(sql, (type , part_no , name,))
         connection.commit()
         print(f"Data for '{name}' inserted into resources table successfully.")
     except (Exception, Error) as error:
