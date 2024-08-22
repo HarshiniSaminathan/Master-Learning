@@ -10,7 +10,7 @@ import openpyxl
 from service import fetch_competency_id, fetch_proficiency_id, fetch_domain_id, insert_master_learning_outcomes, \
     check_if_designation_exists, insert_designation, check_if_resource_exists, update_resource, \
     insert_resource, check_if_region_exists, insert_region, check_if_business_exists, insert_business, \
-    check_if_audience_exists, insert_audience
+    check_if_audience_exists, insert_audience, check_if_permission_exists, insert_permission, update_permission
 
 app = Flask(__name__)
 
@@ -287,6 +287,52 @@ def upload_audience():
             return jsonify({'error': str(e)}), 500
     else:
         return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
+
+@app.route('/permission', methods=['POST'])
+def add_permissions():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and file.filename.endswith('.csv'):
+        try:
+            df = pd.read_csv(file)
+            connection = connect_to_db()
+            insert_count = 0
+            update_Count = 0
+            if connection:
+                for index, row in df.iterrows():
+                    request_type = row.get('request_type')
+                    endpoint = row.get('endpoint')
+                    http_method = row.get('http_method')
+
+                    if not check_if_permission_exists(connection, request_type,endpoint,http_method):
+                        insert_result = insert_permission(connection, request_type, endpoint, http_method)
+                        if insert_result is True :
+                            insert_count +=1
+                    else:
+                        update_result = update_permission(connection, request_type, endpoint, http_method)
+                        if update_result is True :
+                            update_Count += 1
+
+                connection.close()
+                return jsonify({
+                    'message': 'File processed successfully' ,
+                    'data_inserted' : insert_count,
+                    'data_updated' : update_Count
+                }), 200
+            else:
+                return jsonify({'error': 'Failed to connect to database'}), 500
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
+
 
 if __name__ == "__main__":
     app.run(debug=True,port=5006)

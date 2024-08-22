@@ -174,6 +174,17 @@ def check_if_audience_exists(connection, name):
         print(f"Error checking if audience name '{name}' exists:", error)
         return None
 
+def check_if_permission_exists(connection, request_type,endpoint,http_method):
+    try:
+        cursor = connection.cursor()
+        sql = "SELECT id FROM permission WHERE request_type = %s AND endpoint = %s AND http_method = %s"
+        cursor.execute(sql, (request_type,endpoint,http_method,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except (Exception, Error) as error:
+        print(f"Error checking if audience name '{request_type} {endpoint} {http_method}' exists:", error)
+        return None
+
 def insert_audience(connection, name):
     try:
         cursor = connection.cursor()
@@ -183,3 +194,31 @@ def insert_audience(connection, name):
         print(f"Data for '{name}' inserted into audience table successfully.")
     except (Exception, Error) as error:
         print("Error inserting data into audience table:", error)
+
+def insert_permission(connection, request_type, endpoint, http_method):
+    try:
+        cursor = connection.cursor()
+        sql = "INSERT INTO permission (request_type, endpoint, http_method , created_at, updated_at) VALUES ( %s ,%s ,%s ,now(), now())"
+        cursor.execute(sql, (request_type, endpoint, http_method,))
+        connection.commit()
+        print(f"Data for '{request_type} {endpoint} {http_method}' inserted into audience table successfully.")
+        return True
+    except (Exception, Error) as error:
+        print("Error inserting data into permission table:", error)
+        return False
+
+def update_permission(connection, request_type, endpoint, http_method):
+    try:
+        cursor = connection.cursor()
+        sql = """
+        UPDATE permission
+        SET request_type = %s, endpoint = %s, http_method = %s, updated_at = now()
+        WHERE request_type = %s AND endpoint = %s AND http_method = %s
+        """
+        cursor.execute(sql, (request_type, endpoint, http_method, request_type, endpoint, http_method))
+        connection.commit()
+        print(f"Data for '{request_type} {endpoint} {http_method}' updated in permission table successfully.")
+        return True
+    except (Exception, Error) as error:
+        print("Error updating data in permission table:", error)
+        return False
