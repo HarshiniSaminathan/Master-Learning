@@ -182,7 +182,18 @@ def check_if_permission_exists(connection, request_type,endpoint,http_method):
         result = cursor.fetchone()
         return result[0] if result else None
     except (Exception, Error) as error:
-        print(f"Error checking if audience name '{request_type} {endpoint} {http_method}' exists:", error)
+        print(f"Error checking if  permission '{request_type} {endpoint} {http_method}' exists:", error)
+        return None
+
+def check_if_role_exists(connection, roles):
+    try:
+        cursor = connection.cursor()
+        sql = "SELECT id FROM rbac_master WHERE role_name = %s"
+        cursor.execute(sql, (roles,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except (Exception, Error) as error:
+        print(f"Error checking if rbac master '{roles}' exists:", error)
         return None
 
 def insert_audience(connection, name):
@@ -201,10 +212,22 @@ def insert_permission(connection, request_type, endpoint, http_method):
         sql = "INSERT INTO permission (request_type, endpoint, http_method , created_at, updated_at) VALUES ( %s ,%s ,%s ,now(), now())"
         cursor.execute(sql, (request_type, endpoint, http_method,))
         connection.commit()
-        print(f"Data for '{request_type} {endpoint} {http_method}' inserted into audience table successfully.")
+        print(f"Data for '{request_type} {endpoint} {http_method}' inserted into permission table successfully.")
         return True
     except (Exception, Error) as error:
         print("Error inserting data into permission table:", error)
+        return False
+
+def insert_roles(connection, roles):
+    try:
+        cursor = connection.cursor()
+        sql = "INSERT INTO rbac_master (role_name, created_at, updated_at) VALUES ( %s ,now(), now())"
+        cursor.execute(sql, (roles,))
+        connection.commit()
+        print(f"Data for '{roles}' inserted into role table successfully.")
+        return True
+    except (Exception, Error) as error:
+        print("Error inserting data into role table:", error)
         return False
 
 def update_permission(connection, request_type, endpoint, http_method):
@@ -221,4 +244,20 @@ def update_permission(connection, request_type, endpoint, http_method):
         return True
     except (Exception, Error) as error:
         print("Error updating data in permission table:", error)
+        return False
+
+def update_roles(connection, roles):
+    try:
+        cursor = connection.cursor()
+        sql = """
+        UPDATE rbac_master
+        SET role_name = %s , updated_at = now()
+        WHERE role_name = %s
+        """
+        cursor.execute(sql, (roles,roles))
+        connection.commit()
+        print(f"Data for '{roles} ' updated in role table successfully.")
+        return True
+    except (Exception, Error) as error:
+        print("Error updating data in role table:", error)
         return False
