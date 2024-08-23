@@ -251,10 +251,10 @@ def update_roles(connection, roles):
         cursor = connection.cursor()
         sql = """
         UPDATE rbac_master
-        SET role_name = %s , updated_at = now()
+        SET updated_at = now()
         WHERE role_name = %s
         """
-        cursor.execute(sql, (roles,roles))
+        cursor.execute(sql, (roles,))
         connection.commit()
         print(f"Data for '{roles} ' updated in role table successfully.")
         return True

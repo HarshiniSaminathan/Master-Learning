@@ -376,5 +376,60 @@ def add_roles():
     else:
         return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
 
+
+@app.route('/map_roles_permissions', methods=['POST'])
+def map_roles_permissions():
+    try:
+        connection = connect_to_db()
+        if not connection:
+            return jsonify({'error': 'Failed to connect to database'}), 500
+
+        cursor = connection.cursor()
+        cursor.execute("SELECT id, role_name FROM rbac_master")
+        roles = cursor.fetchall()
+
+        cursor.execute("SELECT id, request_type, endpoint, http_method FROM permission")
+        permissions = cursor.fetchall()
+
+        insert_count = 0
+        update_count = 0
+
+        for role in roles:
+            for permission in permissions:
+                role_id = role[0]
+                permission_id = permission[0]
+                cursor.execute("""
+                    SELECT id FROM role_permission 
+                    WHERE role_id = %s AND permission_id = %s
+                """, (role_id, permission_id))
+                result = cursor.fetchone()
+
+                if result:
+                    cursor.execute("""
+                        UPDATE role_permission 
+                        SET updated_at = now() 
+                        WHERE id = %s
+                    """, (result[0],))
+                    update_count += 1
+                else:
+                    cursor.execute("""
+                        INSERT INTO role_permission (role_id, permission_id, created_at, updated_at)
+                        VALUES (%s, %s, now(), now())
+                    """, (role_id, permission_id))
+                    insert_count += 1
+
+        connection.commit()
+        connection.close()
+
+        return jsonify({
+            'message': 'Roles and permissions have been mapped successfully.',
+            'data_inserted': insert_count,
+            'data_updated': update_count
+        }), 200
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == "__main__":
     app.run(debug=True,port=5006)
