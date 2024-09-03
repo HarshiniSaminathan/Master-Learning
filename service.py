@@ -196,6 +196,39 @@ def check_if_role_exists(connection, roles):
         print(f"Error checking if rbac master '{roles}' exists:", error)
         return None
 
+def check_if_sbu_exists(connection, sbu):
+    try:
+        cursor = connection.cursor()
+        sql = "SELECT id FROM sbu WHERE name = %s"
+        cursor.execute(sql, (sbu,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except (Exception, Error) as error:
+        print(f"Error checking if sbu '{sbu}' exists:", error)
+        return None
+
+def check_if_job_role_exists(connection, job_role):
+    try:
+        cursor = connection.cursor()
+        sql = "SELECT id FROM job_role WHERE name = %s"
+        cursor.execute(sql, (job_role,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except (Exception, Error) as error:
+        print(f"Error checking if job_role '{job_role}' exists:", error)
+        return None
+
+def check_if_grade_exists(connection, grade):
+    try:
+        cursor = connection.cursor()
+        sql = "SELECT id FROM grade WHERE name = %s"
+        cursor.execute(sql, (grade,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except (Exception, Error) as error:
+        print(f"Error checking if grade '{grade}' exists:", error)
+        return None
+
 def insert_audience(connection, name):
     try:
         cursor = connection.cursor()
@@ -205,6 +238,36 @@ def insert_audience(connection, name):
         print(f"Data for '{name}' inserted into audience table successfully.")
     except (Exception, Error) as error:
         print("Error inserting data into audience table:", error)
+
+def insert_sbu(connection, sbu):
+    try:
+        cursor = connection.cursor()
+        sql = "INSERT INTO  sbu (name, created_at, updated_at) VALUES (%s,now(), now())"
+        cursor.execute(sql, (sbu,))
+        connection.commit()
+        print(f"Data for '{sbu}' inserted into sbu table successfully.")
+    except (Exception, Error) as error:
+        print("Error inserting data into sbu table:", error)
+
+def insert_job_role(connection, job_role):
+    try:
+        cursor = connection.cursor()
+        sql = "INSERT INTO  job_role (name, created_at, updated_at) VALUES (%s,now(), now())"
+        cursor.execute(sql, (job_role,))
+        connection.commit()
+        print(f"Data for '{job_role}' inserted into job_role table successfully.")
+    except (Exception, Error) as error:
+        print("Error inserting data into job_role table:", error)
+
+def insert_grade(connection, grade):
+    try:
+        cursor = connection.cursor()
+        sql = "INSERT INTO grade (name, created_at, updated_at) VALUES (%s,now(), now())"
+        cursor.execute(sql, (grade,))
+        connection.commit()
+        print(f"Data for '{grade}' inserted into grade table successfully.")
+    except (Exception, Error) as error:
+        print("Error inserting data into grade table:", error)
 
 def insert_permission(connection, request_type, endpoint, http_method):
     try:

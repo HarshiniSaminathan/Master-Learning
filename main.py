@@ -11,7 +11,8 @@ from service import fetch_competency_id, fetch_proficiency_id, fetch_domain_id, 
     check_if_designation_exists, insert_designation, check_if_resource_exists, update_resource, \
     insert_resource, check_if_region_exists, insert_region, check_if_business_exists, insert_business, \
     check_if_audience_exists, insert_audience, check_if_permission_exists, insert_permission, update_permission, \
-    check_if_role_exists, insert_roles, update_roles
+    check_if_role_exists, insert_roles, update_roles, check_if_sbu_exists, insert_sbu, check_if_job_role_exists, \
+    insert_job_role, check_if_grade_exists, insert_grade
 
 app = Flask(__name__)
 
@@ -430,6 +431,120 @@ def map_roles_permissions():
     except Exception as e:
         print(f"An error occurred: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/sbu', methods=['POST'])
+def upload_sbu():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and file.filename.endswith('.csv'):
+        try:
+            df = pd.read_csv(file)
+            connection = connect_to_db()
+            if connection:
+                for index, row in df.iterrows():
+                    sbu = row.get('SBU')
+                    if not sbu:
+                        print(f"Skipping row {index} due to missing 'SBU' value.")
+                        continue
+
+                    if not check_if_sbu_exists(connection, sbu):
+                        insert_sbu(connection, sbu)
+                    else:
+                        print(f"sbu Name '{sbu}' already exists. Skipping insertion.")
+
+                connection.close()
+                return jsonify({
+                    'message': 'File processed successfully'
+                }), 200
+            else:
+                return jsonify({'error': 'Failed to connect to database'}), 500
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
+
+@app.route('/job_role', methods=['POST'])
+def upload_job_role():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and file.filename.endswith('.csv'):
+        try:
+            df = pd.read_csv(file)
+            connection = connect_to_db()
+            if connection:
+                for index, row in df.iterrows():
+                    job_role = row.get('JOB ROLE')
+                    if not job_role:
+                        print(f"Skipping row {index} due to missing 'JOB ROLE' value.")
+                        continue
+
+                    if not check_if_job_role_exists(connection, job_role):
+                        insert_job_role(connection, job_role)
+                    else:
+                        print(f"Job role '{job_role}' already exists. Skipping insertion.")
+
+                connection.close()
+                return jsonify({
+                    'message': 'File processed successfully'
+                }), 200
+            else:
+                return jsonify({'error': 'Failed to connect to database'}), 500
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
+
+@app.route('/grade', methods=['POST'])
+def upload_grade():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and file.filename.endswith('.csv'):
+        try:
+            df = pd.read_csv(file)
+            connection = connect_to_db()
+            if connection:
+                for index, row in df.iterrows():
+                    grade = row.get('GRADE')
+                    if not grade:
+                        print(f"Skipping row {index} due to missing 'grade' value.")
+                        continue
+
+                    if not check_if_grade_exists(connection, grade):
+                        insert_grade(connection, grade)
+                    else:
+                        print(f"Grade'{grade}' already exists. Skipping insertion.")
+
+                connection.close()
+                return jsonify({
+                    'message': 'File processed successfully'
+                }), 200
+            else:
+                return jsonify({'error': 'Failed to connect to database'}), 500
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
 
 if __name__ == "__main__":
     app.run(debug=True,port=5006)
