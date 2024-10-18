@@ -12,7 +12,7 @@ from service import fetch_competency_id, fetch_proficiency_id, fetch_domain_id, 
     insert_resource, check_if_region_exists, insert_region, check_if_business_exists, insert_business, \
     check_if_audience_exists, insert_audience, check_if_permission_exists, insert_permission, update_permission, \
     check_if_role_exists, insert_roles, update_roles, check_if_sbu_exists, insert_sbu, check_if_job_role_exists, \
-    insert_job_role, check_if_grade_exists, insert_grade
+    insert_job_role, check_if_grade_exists, insert_grade, check_if_industry_exists, insert_industry
 
 app = Flask(__name__)
 
@@ -545,6 +545,92 @@ def upload_grade():
             return jsonify({'error': str(e)}), 500
     else:
         return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
+
+@app.route('/industry', methods=['POST'])
+def upload_industry():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and file.filename.endswith('.csv'):
+        try:
+            df = pd.read_csv(file)
+            connection = connect_to_db()
+            if connection:
+                for index, row in df.iterrows():
+                    industry = row.get('JOB ROLE')
+                    if not industry:
+                        print(f"Skipping row {index} due to missing 'JOB ROLE' value.")
+                        continue
+                    if '-' in industry:
+                        industry_name = industry.split('-')[0].strip()
+
+                        if not check_if_industry_exists(connection, industry_name):
+                            insert_industry(connection, industry_name)
+                        else:
+                            print(f"Industry '{industry_name}' already exists. Skipping insertion.")
+                    else:
+                        print(f"Industry '{industry}' does not able to find in job role")
+
+                connection.close()
+                return jsonify({
+                    'message': 'File processed successfully'
+                }), 200
+            else:
+                return jsonify({'error': 'Failed to connect to database'}), 500
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify({'error': str(e)}), 500
+    else:
+        return jsonify({'error': 'Invalid file format. Please upload an Excel file (.csv).'}), 400
+
+
+@app.route('/map_jobrole_to_industry', methods=['PUT'])
+def map_job_role_to_industry():
+    try:
+        connection = connect_to_db()
+        if connection:
+            query = "SELECT id, name FROM job_role WHERE industry_id IS NULL"
+            cursor = connection.cursor()
+            cursor.execute(query)
+            job_roles = cursor.fetchall()
+
+            for job_role in job_roles:
+                job_role_id = job_role[0]
+                job_role_name = job_role[1]
+
+                if '-' in job_role_name:
+                    industry_name = job_role_name.split('-')[0].strip()
+                    industry_id = check_if_industry_exists(connection, industry_name)
+
+                    if industry_id:
+                        update_query = """
+                            UPDATE job_role
+                            SET industry_id = %s, updated_at = CURRENT_TIMESTAMP
+                            WHERE id = %s
+                        """
+                        cursor.execute(update_query, (industry_id, job_role_id))
+                        print(f"Job role {job_role_name} mapped with industry successfully")
+                    else:
+                        print(f"No matching industry found for prefix '{industry_name}' in job role '{job_role_name}'")
+                else:
+                    print(f"Skipping job role '{job_role_name}' as it does not contain a hyphen.")
+
+            connection.commit()
+            cursor.close()
+            connection.close()
+
+            return jsonify({'message': 'Job roles mapped to industries successfully'}), 200
+        else:
+            return jsonify({'error': 'Failed to connect to database'}), 500
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True,port=5006)

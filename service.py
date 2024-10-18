@@ -218,6 +218,18 @@ def check_if_job_role_exists(connection, job_role):
         print(f"Error checking if job_role '{job_role}' exists:", error)
         return None
 
+def check_if_industry_exists(connection, industry):
+    try:
+        cursor = connection.cursor()
+        sql = "SELECT id FROM industry WHERE name = %s"
+        cursor.execute(sql, (industry,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except (Exception, Error) as error:
+        print(f"Error checking if industry '{industry}' exists:", error)
+        return None
+
+
 def check_if_grade_exists(connection, grade):
     try:
         cursor = connection.cursor()
@@ -268,6 +280,16 @@ def insert_grade(connection, grade):
         print(f"Data for '{grade}' inserted into grade table successfully.")
     except (Exception, Error) as error:
         print("Error inserting data into grade table:", error)
+
+def insert_industry(connection, industry):
+    try:
+        cursor = connection.cursor()
+        sql = "INSERT INTO industry (name, created_at, updated_at) VALUES (%s,now(), now())"
+        cursor.execute(sql, (industry,))
+        connection.commit()
+        print(f"Data for '{industry}' inserted into industry table successfully.")
+    except (Exception, Error) as error:
+        print("Error inserting data into industry table:", error)
 
 def insert_permission(connection, request_type, endpoint, http_method):
     try:
